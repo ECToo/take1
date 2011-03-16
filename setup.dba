@@ -1,0 +1,104 @@
+Rem ***** Included Source File *****
+
+setup:
+    sync on : sync rate 0 : autocam off : color backdrop rgb(0,0,0)
+    `set display mode display width(),display height(),screen depth()
+    
+    rem CONSTANTS
+    #constant sw screen width()
+    #constant sh screen height()
+    #constant cx screen width()/2
+    #constant cy screen height()/2
+    #constant Cwhite rgb(255,255,255)
+    #constant Cblack rgb(0,0,0)
+    #constant CmenuBG d3d_rgba(255,255,255,128)
+    #constant CmenuTXT rgb(0,0,0)
+    
+    rem GLOBALS
+    global MODE as integer
+    global mx, my, mmx, mmy, mc, pmc, lmc, rmc
+    global camposX as float
+    global camposY as float
+    global camposZ as float
+    global keyW, keyA, keyS, keyD, keyQ, keyE, keyR, keyF, keyI, keyK, keyJ, keyL, pluskey, minuskey
+    global currentActor as integer
+    
+    rem UDTs and ARRAYS
+    type ac
+        name as string
+        texturenum as integer
+        bumptexnum
+    endtype
+    dim Actors(99) as ac
+    
+    rem LOAD MEDIA
+    load image "Media/Menu/black/agent.png",1,1
+    load image "Media/Menu/black/add-item.png",2,1
+    load image "Media/Menu/black/arrow-round.png",3,1
+    load image "Media/Menu/black/lady.png",4,1
+    load image "Media/Menu/black/line-globe.png",5,1
+    load image "Media/Menu/black/ID.png",6,1
+    `mouseover
+    load image "Media/Menu/green/agent.png",51,1
+    load image "Media/Menu/green/add-item.png",52,1
+    load image "Media/Menu/green/arrow-round.png",53,1
+    load image "Media/Menu/green/lady.png",54,1
+    load image "Media/Menu/green/line-globe.png",55,1
+    load image "Media/Menu/green/ID.png",56,1
+    
+    rem SETUP SPRITES
+    `MENU
+    for s=1 to 6
+        sprite s,sw*2,sh*2,s
+    next
+    `mouseover
+    for s=51 to 56
+        sprite s,sw*2,sh*2,s
+    next
+    
+    rem TICKERS
+    global tick1 as integer
+    make ticker 1,17
+    
+    rem ADVANCED LIGHTING
+    gosub AL_setup:
+return
+
+AL_setup:
+    `Setup Advanced Lighting
+    Sch#=sh
+    AdvLightingX=((screen width()/2)*2)/((Sch#/1080)*2)
+    AdvLightingY=((screen height()/2)*2)/((Sch#/1080)*2)
+    AdvancedLighting_SetUp(AdvLightingX,AdvLightingY,AdvLightingX,512,6)
+    
+    `Set Camera, Ambient and Fog
+    Global_Set_Camera(2,25000,75,1.6)
+    `Global_Set_Ambient(64,64,64,1.0)
+    Global_Set_Fog(100,110,120,5000,2.5)
+    
+    `Setup Post Effects
+    ViewPortRatio#=1.0
+    ViewPortX=((screen width()/2)*2)*ViewPortRatio#
+    ViewPortY=((screen height()/2)*2)*ViewPortRatio#
+    PostEffects_Setup(ViewPortX,ViewPortY,0,0,0,0,0,1)
+    backdrop off framecamera
+    
+    `Setup Sky
+    Sky_SetUp()
+    Clouds_SetUp()
+    
+    `Setup Time Of Day
+    global TimeOfDay#
+    TimeOfDay_SetUp("Shaders/Sky/Earth.tod")
+    TimeOfDay#=9
+    
+    `Make Directional Light
+    DirectionalLight_Create("Shaders/Lighting/Directional.fx")
+    DirectionalLight_Set_Specular(1)
+    
+    `Create Object
+    global normalmap as integer
+    normalmap=find_free_effect()
+    load effect "Shaders/Mesh/Normalmap.fx",normalmap,0
+    Effect_Add(normalmap)
+return
