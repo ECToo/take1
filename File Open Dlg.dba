@@ -1,0 +1,188 @@
+REMSTART
+SAMPLE CODE
+filePath$ = openFileBox("PNG|*.png|JPEG|*.jpg|BMP|*.bmp|DDS|*.dds|TGA|*.tga|All Files|*.*|", AppDir, "Open Texture", ".png", 1)
+if bDlgOK = TRUE
+    filePath$ = trim$(filePath$)
+else
+    end
+endif
+FROM "STITCH" BY GREEN GANDALF
+REMEND
+
+function openFileBox(filter As String ,initdir As String ,dtitle As String ,defext As String ,open As Boolean )
+   
+   //filter = "Text Documents ( *.txt )|*.txt|All Files ( *.* )|*.*|"
+   //initdir = "C:"
+   //dtitle = "Open ~ Test"
+   //defext = "txt"
+   //open = 1 For open Dialog, 0 for save dialog
+    bDlgOK = FALSE
+
+   //Get DLL numbers
+   user32 As Integer
+   comdlg32 As Integer
+
+   //Load in required DLL's
+   user32 = Find Free Dll()
+   Load DLL "user32.dll",user32
+   comdlg32 = Find Free Dll()
+   Load DLL "comdlg32.dll",comdlg32
+
+
+   //Get handle ( unique ID ) to the calling ( this ) window
+   hwnd As DWord
+   hwnd = Call DLL(user32,"GetActiveWindow")
+
+
+   //Unload DLL as it is no longer needed
+   Delete DLL user32
+
+
+   //Get the Memblock Number
+   OPENFILENAME As Integer
+   OPENFILENAME = Find Free Memblock()
+   //Make The Memblock containing the OPENFILENAME structure
+   Make MemBlock OPENFILENAME,76
+
+
+   //Get the pointer to the just created Structure
+   lpofn As DWord
+   lpofn = Get MemBlock Ptr(OPENFILENAME)
+
+
+   //Declare temp variables to hold data for OPENFILENAME structure
+   size As Integer
+   filebuffer As String
+   filebufferptr As DWord
+   flags As DWord
+
+   filter = filter + "|"
+   initdir = initdir + "|"
+   dtitle = dtitle + "|"
+   defext = defext + "|"
+   filebuffer = "|" + Space$(255) + "|"
+   filebufferptr = get_str_ptr(filebuffer)
+   flags = 0x00001000 || 0x00000004 || 0x00000002
+   size = 0
+
+   Write MemBlock DWord OPENFILENAME,0,76                     : `lStructSize
+   Write MemBlock DWord OPENFILENAME,4,hwnd                   : `hwndOwner
+   `Write MemBlock DWord OPENFILENAME,8,NULL                   : `hInstance
+   Write MemBlock DWord OPENFILENAME,12,get_str_ptr(filter)  : `lpstrFilter
+   `Write MemBlock DWord OPENFILENAME,16,0                     : `lpstrCustomFilter
+   `Write MemBlock DWord OPENFILENAME,20,NULL                  : `nMaxCustFilter
+   Write MemBlock DWord OPENFILENAME,24,1                     : `nFilterIndex
+   Write MemBlock DWord OPENFILENAME,28,filebufferptr         : `lpstrFile
+   Write MemBlock DWord OPENFILENAME,32,256                   : `nMaxFile
+   `Write MemBlock DWord OPENFILENAME,36,0                     : `lpstrFileTitle
+   `Write MemBlock DWord OPENFILENAME,40,NULL                  : `nMaxFileTitle
+   Write MemBlock DWord OPENFILENAME,44,get_str_ptr(initdir) : `lpstrInitialDir
+   Write MemBlock DWord OPENFILENAME,48,get_str_ptr(dtitle)  : `lpstrTitle
+   Write MemBlock DWord OPENFILENAME,52,flags                 : `Flags
+   `Write MemBlock Word OPENFILENAME,56,NULL                   : `nFileOffset
+   `Write MemBlock Word OPENFILENAME,58,NULL                   : `nFileExtension
+   Write MemBlock DWord OPENFILENAME,60,get_str_ptr(defext)  : `lpstrDefExt
+   `Write MemBlock DWord OPENFILENAME,64,NULL                  : `lCustData
+   `Write MemBlock DWord OPENFILENAME,68,NULL                  : `lpfnHook
+   `Write MemBlock DWord OPENFILENAME,72,0                     : `lpTemplateName
+
+
+   //Call the Command to open the dialogue
+   retval As DWord
+   If open
+      retval = Call DLL(comdlg32,"GetOpenFileNameA",lpofn)
+   Else
+      retval = Call DLL(comdlg32,"GetSaveFileNameA",lpofn)
+   EndIf
+
+   //Check if it was sucecfull
+   If retval <> 0
+      code$ = get_str(filebufferptr,256)
+      bDlgOK = TRUE 
+   Else
+      retval = Call DLL(comdlg32,"CommDlgExtendedError")
+      Select retval
+         Case 0xFFFF : code$ = "The dialog box could not be created. The common dialog box function's call to the DialogBox function failed. For example, this error occurs if the common dialog box call specifies an invalid window handle." : EndCase
+         Case 0x0006 : code$ = "The common dialog box function failed to find a specified resource." : EndCase
+         Case 0x0004 : code$ = "The ENABLETEMPLATE flag was set in the Flags member of the initialization structure for the corresponding common dialog box, but you failed to provide a corresponding instance handle." : EndCase
+         Case 0x0002 : code$ = "The common dialog box function failed during initialization. This error often occurs when sufficient memory is not available." : EndCase
+         Case 0x000B : code$ = "The ENABLEHOOK flag was set in the Flags member of the initialization structure for the corresponding common dialog box, but you failed to provide a pointer to a corresponding hook procedure." : EndCase
+         Case 0x0008 : code$ = "The common dialog box function failed to lock a specified resource." : EndCase
+         Case 0x0003 : code$ = "The ENABLETEMPLATE flag was set in the Flags member of the initialization structure for the corresponding common dialog box, but you failed to provide a corresponding template." : EndCase
+         Case 0x0007 : code$ = "The common dialog box function failed to load a specified string." : EndCase
+         Case 0x0001 : code$ = "The lStructSize member of the initialization structure for the corresponding common dialog box is invalid." : EndCase
+         Case 0x0005 : code$ = "The common dialog box function failed to load a specified string." : EndCase
+         Case 0x3003 : code$ = "The buffer pointed to by the lpstrFile member of the OPENFILENAME structure is too small for the file name specified by the user. The first two bytes of the lpstrFile buffer contain an integer value specifying the size, in TCHARs, required to receive the full name." : EndCase
+         Case 0x0009 : code$ = "The common dialog box function was unable to allocate memory for internal structures." : EndCase
+         Case 0x3002 : code$ = "A file name is invalid." : EndCase
+         Case 0x000A : code$ = "The common dialog box function was unable to lock the memory associated with a handle." : EndCase
+         Case 0x3001 : code$ = "An attempt to subclass a list box failed because sufficient memory was not available." : EndCase
+         Case Default : code$ = "WHOOPS!" : EndCase
+      EndSelect
+   EndIF
+
+   Delete DLL comdlg32
+
+    code$=trim$(code$)
+EndFunction code$
+
+
+
+Function get_str_ptr(pstr As String )
+   `pstr$ should be a "|" ( NULL ) seperated string.
+
+   memnum As Integer
+   strlen As Integer
+   char As Byte
+   memptr As DWord
+   strptr As DWord
+
+   memnum = Find Free Memblock()
+   strlen = Len(pstr)
+
+   Make MemBlock memnum,strlen
+
+   For i = 1 To strlen
+      If Mid$(pstr,i) = "|"
+         char = 0
+      Else
+         char = Asc(Mid$(pstr,i))
+      EndIf
+      Write MemBlock Byte memnum,(i - 1),char
+   Next i
+
+   memptr = Get MemBlock Ptr(memnum)
+
+   strptr = Make Memory(strlen)
+
+   Copy Memory strptr,memptr,strlen
+
+   Delete MemBlock memnum
+
+
+EndFunction strptr
+
+
+
+Function get_str(strptr As DWord ,strsize As Integer )
+   `strptr is the pointer returned by _get_str_ptr()
+   `strsize is the Integer length of the string specified by the pointer
+
+   memnum As Integer
+   memptr As DWord
+   str As String
+   char As String
+
+   memnum = Find Free Memblock()
+
+   Make MemBlock memnum,strsize
+
+   memptr = Get MemBlock Ptr(memnum)
+
+   Copy Memory memptr,strptr,strsize
+
+   For i = 1 To strsize
+      str = str + Chr$(MemBlock Byte(memnum,i - 1))
+   Next i
+
+EndFunction str
