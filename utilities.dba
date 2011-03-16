@@ -1,0 +1,39 @@
+Rem ***** Included Source File *****
+
+REM DAVID W SCALE CODE
+function scaleobject(ObjID, scX#,scY#,scZ#)
+    `you must loop through each limb adding to the existing vertex count
+    for xx = 0 to GetTotalLimbs( ObjID ) -1
+        LOCK VERTEXDATA FOR LIMB ObjID,xx,2
+        VertexCount =GET VERTEXDATA VERTEX COUNT()
+        for v = 0 to VertexCount -1
+            X# =GET VERTEXDATA POSITION X( v )
+            Y# =GET VERTEXDATA POSITION Y( v )
+            Z# =GET VERTEXDATA POSITION Z( v )
+            
+            SET VERTEXDATA POSITION v, X#*scX#, Y#*scY#, Z#*scZ#
+        next v
+    next xx
+    UNLOCK VERTEXDATA
+    CALCULATE OBJECT BOUNDS ObjID
+endfunction
+function GetTotalLimbs( ObjID )
+    `check number of limbs on object
+    while limb exist(ObjID,LimbCount) = 1
+        LimbCount = LimbCount + 1
+    endwhile
+endfunction LimbCount
+
+function find_free_actor()
+    while done=0
+        inc obj
+        if obj>99
+            done=-1
+            obj=-1
+        else
+            if object exist(obj)=0
+                done=1
+            endif
+        endif
+    endwhile
+endfunction obj
