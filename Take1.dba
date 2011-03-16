@@ -1,0 +1,74 @@
+Rem Project: Take1
+Rem Created: Monday, March 14, 2011
+
+Rem ***** Main Source File *****
+
+rem Reserved object numbers
+`1->99 Actors
+
+gosub setup:
+
+do
+    gosub tickers:
+    
+    `Set Time Of Day
+    if tick1=1
+        TimeOfDay#=TimeOfDay#+0.0001+mousemovez()*0.001
+        if TimeOfDay#>24 then TimeOfDay#=TimeOfDay#-24
+        if TimeOfDay#<0 then TimeOfDay#=TimeOfDay#+24
+    endif
+    TimeOfDay_SetTime(TimeOfDay#)
+    Dof#=1000
+    PostEffects_Set(0,Dof#*5,0)
+    
+    `Get user input
+    gosub user_input:
+    
+    `show the menu
+    gosub menu:
+    
+    `update shaders
+    AdvancedLighting_Update()
+    
+    sync
+loop
+
+tickers:
+    tick1=ticker(1)
+return
+
+user_input:
+    mx=mousex()
+    my=mousey()
+    mmx=mousemovex()
+    mmy=mousemovey()
+    pmc=mc
+    mc=mouseclick()
+    lmc=0
+    rmc=0
+    if mc<>pmc
+        if mc=1 then lmc=1
+        if mc=2 then rmc=1
+        if mc=3
+            if pmc=1 then rmc=1
+            if pmc=2 then lmc=1
+        endif
+    endif
+    camposX=camera position x()
+    camposY=camera position y()
+    camposZ=camera position z()
+    keyW=keystate(17)
+    keyA=keystate(30)
+    keyS=keystate(31)
+    keyD=keystate(32)
+    keyQ=keystate(16)
+    keyE=keystate(18)
+    keyR=keystate(19)
+    keyF=keystate(33)
+    keyI=keystate(23)
+    keyK=keystate(37)
+    keyJ=keystate(36)
+    keyL=keystate(38)
+    pluskey=keystate(13)
+    minuskey=keystate(12)
+return
