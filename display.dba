@@ -1,0 +1,33 @@
+Rem ***** Included Source File *****
+
+function help_text(txt$)
+    w=d3d_gettextwidth(1,txt$)
+    h=d3d_gettextheight(1,txt$)
+    t=sh-10-h
+    d3d_rounded_box cx-w/2-10,t,cx+w/2+10,h+t,5,1,CwhiteA
+    d3d_rounded_box cx-w/2-10,t,cx+w/2+10,h+t,5,0,Cdarkgrey
+    d3d_starttext
+    d3d_text 1,cx,t,1,txt$,Cdarkgrey
+    d3d_endtext
+endfunction
+
+function get_text_input(questiontxt$)
+    clear entry buffer
+    while done=0
+        i$=entry$() : clear entry buffer
+        if len(i$)=1 and asc(i$)<32 then i$=""
+        txt$=txt$+i$
+        boxtxt$=questiontxt$+txt$
+        w=d3d_gettextwidth(1,boxtxt$)
+        h=d3d_gettextheight(1,boxtxt$)
+        d3d_rounded_box cx-w/2-10,cy-h/2,cx+w/2+10,cy+h/2,10,1,CmenuBG
+        d3d_rounded_box cx-w/2-10,cy-h/2,cx+w/2+10,cy+h/2,10,0,CmenuTXT
+        d3d_starttext
+        d3d_text 1,cx,cy-h/2,1,boxtxt$,Cblack
+        d3d_endtext
+        done=returnkey()
+        sync
+    endwhile
+    nice wait no key
+endfunction txt$
+
