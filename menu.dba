@@ -1,0 +1,164 @@
+Rem ***** Included Source File *****
+
+menu:
+    select MODE
+        case 0
+            rem DEFAULT MENU
+            clicked=show_menu(1)
+            if clicked=1
+                MODE=1
+            endif
+        endcase
+        case 1
+            rem ACTOR MENU
+            clicked=show_menu(2)
+            if clicked=1
+                file$=openFileBox("X|*.x|DBO|*.dbo|3DS|*.3ds|All Files|*.*|", dir exe(), "Load Character", ".x", 1)
+                if file exist(file$)
+                    act=find_free_actor()
+                    if act>0
+                        load object file$,act
+                        s#=object size y(act)
+                        position camera 0,s#*.75,-s#
+                        point camera 0,s#*.6,-0
+                        if act=99
+                            message "Final actor slot has been filled (99)"
+                        endif
+                        MODE=2
+                        currentActor=act
+                        Actors(act).name = get_text_input("Actor Name: ")
+                    else
+                        errormessage "Maximum number of actors used!"
+                    endif
+                else
+                    errormessage "No file selected!"
+                endif
+            endif
+            if clicked=2
+                MODE=0
+            endif
+        endcase
+        case 2
+            rem ACTOR EDITOR
+            if tick1=1 then turn object right currentActor,1
+            clicked=show_menu(3)
+            if clicked=1
+                file$=openFileBox("PNG|*.png|JPEG|*.jpg|DDS|*.dds|All Files|*.*|", dir exe(), "Load Texture", ".png", 1)
+                if file exist(file$)
+                    i=find free image(1000,1000)
+                    if i>0
+                        load image file$,i
+                        texture object currentActor,i
+                        Actors(currentActor).texturenum=i
+                    else
+                        errormessage "Maximum number of images used!"
+                    endif
+                else
+                    errormessage "No file selected!"
+                endif
+            endif
+            if clicked=2
+                file$=openFileBox("PNG|*.png|JPEG|*.jpg|DDS|*.dds|All Files|*.*|", dir exe(), "Load Bumpmap Texture", ".png", 1)
+                if file exist(file$)
+                    i=find free image(1000,1000)
+                    if i>0
+                        load image file$,i
+                        Object_Add(currentActor)
+                        Object_Set_Dynamic(currentActor)
+                        set object effect currentActor,normalmap
+                        texture object currentActor,1,i
+                        Actors(currentActor).bumptexnum=i
+                    else
+                        errormessage "Maximum number of images used!"
+                    endif
+                else
+                    errormessage "No file selected!"
+                endif
+            endif
+        endcase
+    endselect
+return
+
+function show_menu(num)
+    d3d_box 0,0,sw,32,CmenuBG
+    d3d_box 0,0,sw,32,Cwhite
+    
+    rem Get mouseover/clicked
+    if my<33
+        over=(mx/32)+1
+        if lmc
+            cl=over
+        endif
+    endif
+    
+    rem set sprites and text up
+    select num
+        case 1
+            rem DEFAULT MENU
+            if over=1
+                paste sprite 51,0,0
+                menu_text("Actor Editor",over)
+            else
+                paste sprite 1,0,0
+            endif
+        endcase
+        case 2
+            rem ACTOR MENU
+            if over=1
+                paste sprite 52,0,0
+                menu_text("Load new Actor",over)
+            else
+                paste sprite 2,0,0
+            endif
+            if over=2
+                paste sprite 53,32,0
+                menu_text("Back to main menu",over)
+            else
+                paste sprite 3,32,0
+            endif
+        endcase
+        case 3
+            rem ACTOR EDITOR
+            if over=1
+                paste sprite 54,0,0
+                menu_text("Texture Actor",over)
+            else
+                paste sprite 4,0,0
+            endif
+            if over=2
+                paste sprite 55,32,0
+                menu_text("Add 'bump-map'",over)
+            else
+                paste sprite 5,32,0
+            endif
+            if over=3
+                paste sprite 56,64,0
+                menu_text("Set up Animation",over)
+            else
+                paste sprite 6,64,0
+            endif
+            if over=4
+                paste sprite 53,96,0
+                menu_text("Back to main menu",over)
+            else
+                paste sprite 3,96,0
+            endif
+        endcase
+    endselect
+endfunction cl
+
+function menu_text(txt$,num)
+    w=d3d_gettextwidth(1,txt$)
+    h=d3d_gettextheight(1,txt$)
+    `catch text going off screen
+    sx=num*32
+    if sx+w>sw
+        sx=sw-w
+    endif
+    `display it
+    d3d_rounded_box sx,35,sx+w+10,35+h,5,1,CmenuBG
+    d3d_rounded_box sx,35,sx+w+10,35+h,5,0,Cwhite
+    d3d_starttext
+    d3d_text 1,sx+5,35,0,txt$,CmenuTXT
+    d3d_endtext
+endfunction
